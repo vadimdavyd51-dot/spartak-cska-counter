@@ -1,0 +1,8 @@
+{
+  "appId": "com.schetchik.spartakcska",
+  "appName": "СПАРТАК ЦСКА",
+  "webDir": "www",
+  "android": {
+    "backgroundColor": "#0A2A8A"
+  }
+}

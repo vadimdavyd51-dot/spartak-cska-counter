@@ -1,0 +1,238 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>Счётчик СПАРТАК ЦСКА</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Rubik:wght@700;800&display=swap">
+<style>
+/* Layout: two full-height tap halves, club name on top, huge digits centered, reset and undo pill at bottom center.
+   Single fixed look by choice: red/white on the left, blue/red on the right. */
+:root {
+  --red: #D5112B;
+  --red-bright: #FF3B47;
+  --blue: #0A2A8A;
+  --white: #FFFFFF;
+  --ink: #14161F;
+  --font: 'Rubik', system-ui, 'Segoe UI', Roboto, Arial, sans-serif;
+  color-scheme: dark;
+}
+html, body { height: 100%; }
+body {
+  background: var(--blue);
+  color: var(--white);
+  font-family: var(--font);
+  overflow: hidden;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+.app {
+  position: relative;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  height: 100%;
+}
+.side {
+  position: relative;
+  container-type: size;
+  border: 0;
+  margin: 0;
+  padding: 0 16px;
+  appearance: none;
+  -webkit-appearance: none;
+  font: inherit;
+  cursor: pointer;
+  touch-action: manipulation;
+  min-width: 0;
+  overflow: hidden;
+}
+.side:focus-visible { outline: 4px solid var(--white); outline-offset: -8px; }
+.side.a { background: var(--red); color: var(--white); }
+.side.b { background: var(--blue); color: var(--red-bright); }
+.name {
+  position: absolute;
+  top: 8cqh;
+  left: 8px;
+  right: 8px;
+  text-align: center;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  font-size: min(9cqh, 15cqw);
+  line-height: 1;
+}
+.num {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  font-weight: 800;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  font-size: min(62cqh, calc(92cqw / (var(--n, 2) * 0.66)));
+}
+.num span { display: block; }
+.num span.bump { animation: bump 160ms ease-out; }
+@keyframes bump {
+  0% { transform: scale(1); }
+  40% { transform: scale(1.07); }
+  100% { transform: scale(1); }
+}
+.controls {
+  position: absolute;
+  left: 50%;
+  bottom: 16px;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 10px;
+  z-index: 2;
+}
+.ctl {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: 52px;
+  min-width: 52px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: 26px;
+  background: rgba(255, 255, 255, 0.92);
+  color: var(--ink);
+  font: 700 15px/1 var(--font);
+  cursor: pointer;
+  touch-action: manipulation;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.35);
+}
+.ctl svg { width: 24px; height: 24px; flex: none; }
+.ctl:focus-visible { outline: 3px solid var(--ink); outline-offset: 2px; }
+.ctl.armed { background: var(--ink); color: var(--white); }
+.ctl .label { display: none; white-space: nowrap; }
+.ctl.armed .label { display: inline; }
+@media (prefers-reduced-motion: reduce) {
+  .num span.bump { animation: none; }
+}
+</style>
+</head>
+<body>
+
+<main class="app">
+  <button class="side a" id="sideA" type="button" aria-label="СПАРТАК: добавить очко">
+    <span class="name">СПАРТАК</span>
+    <span class="num"><span id="numA">0</span></span>
+  </button>
+  <button class="side b" id="sideB" type="button" aria-label="ЦСКА: добавить очко">
+    <span class="name">ЦСКА</span>
+    <span class="num"><span id="numB">0</span></span>
+  </button>
+  <div class="controls">
+    <button class="ctl" id="undo" type="button" aria-label="Отменить последнее нажатие">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></svg>
+    </button>
+    <button class="ctl" id="reset" type="button" aria-label="Сбросить счёт">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 12a8 8 0 1 1-2.5-5.8"/><path d="M20 4v5h-5"/></svg>
+      <span class="label">Сбросить?</span>
+    </button>
+  </div>
+</main>
+
+<script>
+(function () {
+  var KEY = 'spartak-cska-counter';
+  var state = { a: 0, b: 0, h: [] };
+
+  try {
+    var saved = JSON.parse(localStorage.getItem(KEY) || 'null');
+    if (saved && typeof saved.a === 'number' && typeof saved.b === 'number') {
+      state.a = Math.max(0, saved.a | 0);
+      state.b = Math.max(0, saved.b | 0);
+      state.h = Array.isArray(saved.h) ? saved.h.filter(function (x) { return x === 'a' || x === 'b'; }).slice(-500) : [];
+    }
+  } catch (e) {}
+
+  function save() {
+    try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) {}
+  }
+
+  var els = {
+    a: document.getElementById('numA'),
+    b: document.getElementById('numB')
+  };
+
+  function render() {
+    ['a', 'b'].forEach(function (k) {
+      els[k].textContent = state[k];
+      els[k].parentNode.style.setProperty('--n', Math.max(2, String(state[k]).length));
+    });
+  }
+
+  function bump(k) {
+    var el = els[k];
+    el.classList.remove('bump');
+    void el.offsetWidth;
+    el.classList.add('bump');
+  }
+
+  var wakeRequested = false;
+  function keepAwake() {
+    if (wakeRequested) return;
+    wakeRequested = true;
+    try {
+      if (navigator.wakeLock && navigator.wakeLock.request) {
+        navigator.wakeLock.request('screen').catch(function () {});
+      }
+    } catch (e) {}
+  }
+
+  function tap(k) {
+    state[k] += 1;
+    state.h.push(k);
+    if (state.h.length > 500) state.h.shift();
+    save();
+    render();
+    bump(k);
+    keepAwake();
+    try { if (navigator.vibrate) navigator.vibrate(12); } catch (e) {}
+  }
+
+  document.getElementById('sideA').addEventListener('click', function () { tap('a'); });
+  document.getElementById('sideB').addEventListener('click', function () { tap('b'); });
+
+  document.getElementById('undo').addEventListener('click', function () {
+    var k = state.h.pop();
+    if (!k) return;
+    state[k] = Math.max(0, state[k] - 1);
+    save();
+    render();
+  });
+
+  var resetBtn = document.getElementById('reset');
+  var armTimer = null;
+  function disarm() {
+    resetBtn.classList.remove('armed');
+    resetBtn.setAttribute('aria-label', 'Сбросить счёт');
+    clearTimeout(armTimer);
+    armTimer = null;
+  }
+  resetBtn.addEventListener('click', function () {
+    if (!resetBtn.classList.contains('armed')) {
+      resetBtn.classList.add('armed');
+      resetBtn.setAttribute('aria-label', 'Нажмите ещё раз, чтобы сбросить счёт');
+      armTimer = setTimeout(disarm, 3000);
+      return;
+    }
+    state.a = 0;
+    state.b = 0;
+    state.h = [];
+    save();
+    render();
+    disarm();
+  });
+
+  render();
+})();
+</script>
+</body>
+</html>
