@@ -2,7 +2,7 @@
 <html lang="ru">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <title>Счётчик СПАРТАК ЦСКА</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -19,7 +19,8 @@
   --font: 'Rubik', system-ui, 'Segoe UI', Roboto, Arial, sans-serif;
   color-scheme: dark;
 }
-html, body { height: 100%; }
+*, *::before, *::after { box-sizing: border-box; }
+html, body { height: 100%; margin: 0; padding: 0; }
 body {
   background: var(--blue);
   color: var(--white);
@@ -49,6 +50,8 @@ body {
   min-width: 0;
   overflow: hidden;
 }
+.side.a { padding-left: max(16px, env(safe-area-inset-left, 0px)); }
+.side.b { padding-right: max(16px, env(safe-area-inset-right, 0px)); }
 .side:focus-visible { outline: 4px solid var(--white); outline-offset: -8px; }
 .side.a { background: var(--red); color: var(--white); }
 .side.b { background: var(--blue); color: var(--red-bright); }
